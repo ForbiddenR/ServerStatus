@@ -117,12 +117,6 @@ pub struct Config {
     pub jwt_secret: Option<String>,
 
     #[serde(default = "Default::default")]
-    pub tgbot: notifier::tgbot::Config,
-    #[serde(default = "Default::default")]
-    pub wechat: notifier::wechat::Config,
-    #[serde(default = "Default::default")]
-    pub email: notifier::email::Config,
-    #[serde(default = "Default::default")]
     pub log: notifier::log::Config,
     #[serde(default = "Default::default")]
     pub webhook: notifier::webhook::Config,

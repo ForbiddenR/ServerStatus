@@ -25,8 +25,8 @@ fn main() {
     #[cfg(not(target_env = "msvc"))]
     std::env::set_var("PROTOC", protobuf_src::protoc());
 
-    tonic_build::configure()
+    tonic_prost_build::configure()
         .type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]")
-        .compile(&["proto/server_status.proto"], &["proto"])
+        .compile_protos(&["proto/server_status.proto"], &["proto"])
         .unwrap();
 }
