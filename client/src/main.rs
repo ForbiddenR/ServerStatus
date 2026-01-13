@@ -342,7 +342,7 @@ async fn main() -> Result<()> {
 
     // support check
     if !sysinfo::IS_SUPPORTED_SYSTEM {
-        panic!("当前系统不支持，请切换到Python跨平台版本!");
+        panic!("当前系统不支持, 请切换到Python跨平台版本!");
     }
 
     let sys_info = sys_info::collect_sys_info(&args);

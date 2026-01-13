@@ -22,7 +22,7 @@ anyhow = "1"
 bytes = { version = "1", features = ["serde"] }
 chrono = "0.4"
 clap = { version = "4.5", features = ["derive", "unicode", "env"] }
-fastrand = "2.0.1"
+fastrand = "2.0"
 hyper = { version = "1.2", features = ["full"] }
 lazy_static = "1.4"
 log = "0.4"
@@ -32,17 +32,10 @@ pretty_env_logger = "0.5"
 prettytable-rs = "^0.10"
 prost = "0.14"
 regex = "1.12"
-reqwest = { version = "0.12", features = [
+reqwest = { version = "0.13", features = [
     "json",
-    "rustls-tls",
-    "brotli",
-    "gzip",
-    "deflate",
-    "stream",
-    "socks",
+    "rustls",
 ], default-features = false }
-rustls = { version = "0.23", default-features = false }
-rustls-pemfile = { version = "2" }
 serde = { version = "1.0", default-features = false, features = [
     "derive",
     "alloc",
@@ -51,11 +44,9 @@ serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 stat_common = { path = "../common", version = "1.1.5" }
 sysinfo = "0.30"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-tokio-rustls = { version = "0.25" }
-tonic = { version = "0.14", features = ["tls-ring", "tls-webpki-roots"] }
+tonic = { version = "0.14", features = ["tls-webpki-roots"] }
 tower = "0.5"
-webpki-roots = "1.0"
-url = "2.5.0"
+url = "2.5"
 
 [features]
 default = ["sysinfo"]

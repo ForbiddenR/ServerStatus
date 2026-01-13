@@ -46,7 +46,7 @@ pub async fn report(args: &Args, stat_base: &mut StatRequest) -> anyhow::Result<
     } else {
         // TLS
         if addr.starts_with("https://") {
-            let tls = ClientTlsConfig::new();
+            let tls = ClientTlsConfig::new().with_enabled_roots();
             channel = Channel::from_shared(addr)?.tls_config(tls)?.connect().await?;
         } else {
             channel = Channel::from_shared(addr)?.connect().await?;
