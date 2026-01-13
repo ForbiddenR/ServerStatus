@@ -21,7 +21,6 @@ use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::config::Host;
-use crate::notifier::{Event, Notifier};
 use crate::payload::{HostStat, StatsResp};
 
 const SAVE_INTERVAL: u64 = 60;
@@ -75,7 +74,6 @@ impl StatsMgr {
     pub fn init(
         &mut self,
         cfg: &'static crate::config::Config,
-        notifies: Arc<Mutex<Vec<Box<dyn Notifier + Send>>>>,
     ) -> Result<()> {
         let hosts_map_base = Arc::new(Mutex::new(cfg.hosts_map.clone()));
 
@@ -86,7 +84,6 @@ impl StatsMgr {
 
         let (stat_tx, stat_rx) = sync_channel(512);
         STAT_SENDER.set(stat_tx).unwrap();
-        let (notifier_tx, notifier_rx) = sync_channel(512);
 
         let stat_map: Arc<Mutex<HashMap<String, Cow<HostStat>>>> = Arc::new(Mutex::new(HashMap::new()));
 
@@ -95,7 +92,6 @@ impl StatsMgr {
             let hosts_group_map = cfg.hosts_group_map.clone();
             let hosts_map = hosts_map_base.clone();
             let stat_map = stat_map.clone();
-            let notifier_tx = notifier_tx.clone();
 
             move || loop {
                 while let Ok(mut stat) = stat_rx.recv() {
@@ -147,7 +143,6 @@ impl StatsMgr {
                         if stat_t.host_type.is_empty() {
                             stat_t.host_type = info.r#type.to_owned();
                         }
-                        stat_t.notify = info.notify && stat_t.notify;
                         stat_t.pos = info.pos;
                         stat_t.disabled = info.disabled;
                         stat_t.weight += info.weight;
@@ -197,11 +192,6 @@ impl StatsMgr {
                                 if stat_t.ip_info.is_none() {
                                     stat_t.ip_info = pre_stat.ip_info.to_owned();
                                 }
-
-                                if stat_t.notify && (pre_stat.latest_ts + cfg.offline_threshold < stat_t.latest_ts) {
-                                    // node up notify
-                                    notifier_tx.send((Event::NodeUp, stat.clone()));
-                                }
                             }
                             host_stat_map.insert(stat.name.to_string(), stat);
                             //trace!("{:?}", host_stat_map);
@@ -217,8 +207,6 @@ impl StatsMgr {
             let stats_data = self.stats_data.clone();
             let hosts_map = hosts_map_base.clone();
             let stat_map = stat_map.clone();
-            let notifier_tx = notifier_tx.clone();
-            let mut latest_notify_ts = 0_u64;
             let mut latest_save_ts = 0_u64;
             let mut latest_group_gc = 0_u64;
             let mut latest_alert_check_ts = 0_u64;
@@ -227,7 +215,6 @@ impl StatsMgr {
 
                 let mut resp = StatsResp::new();
                 let now = resp.updated;
-                let mut notified = false;
 
                 // group gc
                 if latest_group_gc + cfg.group_gc < now {
@@ -276,24 +263,7 @@ impl StatsMgr {
                             }
                         }
 
-                        // client notify
-                        if o.notify {
-                            // notify check /30 s
-                            if latest_notify_ts + cfg.notify_interval < now {
-                                if o.online4 || o.online6 {
-                                    notifier_tx.send((Event::Custom, stat.clone()));
-                                } else {
-                                    o.disabled = true;
-                                    notifier_tx.send((Event::NodeDown, stat.clone()));
-                                }
-                                notified = true;
-                            }
-                        }
-
                         resp.servers.push(stat.as_ref().clone());
-                    }
-                    if notified {
-                        latest_notify_ts = now;
                     }
                 }
 
@@ -327,19 +297,6 @@ impl StatsMgr {
                 }
                 if let Ok(mut o) = stats_data.lock() {
                     *o = resp;
-                }
-            }
-        });
-
-        // notify thread
-        thread::spawn(move || loop {
-            while let Ok(msg) = notifier_rx.recv() {
-                let (e, stat) = msg;
-                let notifiers = &*notifies.lock().unwrap();
-                trace!("recv notify => {:?}, {:?}", e, stat);
-                for notifier in notifiers {
-                    trace!("{} notify {:?} => {:?}", notifier.kind(), e, stat);
-                    notifier.notify(&e, stat.borrow());
                 }
             }
         });

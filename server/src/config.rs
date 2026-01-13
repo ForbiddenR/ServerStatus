@@ -7,8 +7,6 @@ use std::env;
 use std::fs;
 use uuid::Uuid;
 
-use crate::notifier;
-
 fn default_as_true() -> bool {
     true
 }
@@ -104,8 +102,6 @@ pub struct Config {
     #[serde(default = "default_grpc_addr")]
     pub grpc_addr: String,
     #[serde(default = "Default::default")]
-    pub notify_interval: u64,
-    #[serde(default = "Default::default")]
     pub offline_threshold: u64,
     #[serde(default = "Default::default")]
     pub grpc_tls: u32,
@@ -115,11 +111,6 @@ pub struct Config {
     pub admin_user: Option<String>,
     pub admin_pass: Option<String>,
     pub jwt_secret: Option<String>,
-
-    #[serde(default = "Default::default")]
-    pub log: notifier::log::Config,
-    #[serde(default = "Default::default")]
-    pub webhook: notifier::webhook::Config,
 
     #[serde(default = "Default::default")]
     pub hosts: Vec<Host>,
@@ -194,9 +185,6 @@ pub fn from_str(content: &str) -> Option<Config> {
 
     if o.offline_threshold < 30 {
         o.offline_threshold = 30;
-    }
-    if o.notify_interval < 30 {
-        o.notify_interval = 30;
     }
     if o.group_gc < 30 {
         o.group_gc = 30;

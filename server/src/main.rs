@@ -9,12 +9,7 @@ extern crate prettytable;
 use clap::Parser;
 use once_cell::sync::OnceCell;
 use std::process;
-use std::sync::Arc;
-use std::sync::Mutex;
-use std::thread;
-use std::time::Duration;
 use tokio::net::TcpListener;
-use tokio::runtime::Handle;
 use tokio::signal;
 
 use axum::{
@@ -32,7 +27,6 @@ mod grpc;
 mod http;
 mod jinja;
 mod jwt;
-mod notifier;
 mod payload;
 mod stats;
 
@@ -46,8 +40,6 @@ struct Args {
     config: String,
     #[arg(short = 't', long, help = "config test, default:false")]
     config_test: bool,
-    #[arg(long = "notify-test", help = "notify test, default:false")]
-    notify_test: bool,
     #[arg(long = "cloud", help = "cloud mode, load cfg from env var: SRV_CONF")]
     cloud: bool,
 }
@@ -59,10 +51,10 @@ fn create_app_router() -> Router {
 
     Router::new()
         .route("/report", post(http::report))
-        .route("/json/stats.json", get(http::get_stats_json)) // 兼容就旧主题
+        .route("/json/stats.json", get(http::get_stats_json)) // 兼容旧主题
         // .route("/config.pub.json", get(http::get_site_config_json)) // TODO
         .route("/api/admin/authorize", post(jwt::authorize))
-        .route("/api/admin/:path", get(http::admin_api)) // stats.json || config.json
+        .route("/api/admin/{path}", get(http::admin_api)) // stats.json || config.json
         // .route("/admin", get(assets::admin_index_handler))
         .route("/detail", get(http::get_detail))
         .route("/map", get(http::get_map))
@@ -135,34 +127,11 @@ async fn main() -> Result<(), anyhow::Error> {
     // init tpl
     http::init_jinja_tpl().unwrap();
 
-    // init notifier
-    *notifier::NOTIFIER_HANDLE.lock().unwrap() = Some(Handle::current());
     let cfg = G_CONFIG.get().unwrap();
-    let notifies: Arc<Mutex<Vec<Box<dyn notifier::Notifier + Send>>>> = Arc::new(Mutex::new(Vec::new()));
-    if cfg.log.enabled {
-        let o = Box::new(notifier::log::Log::new(&cfg.log));
-        notifies.lock().unwrap().push(o);
-    }
-    if cfg.webhook.enabled {
-        let o = Box::new(notifier::webhook::Webhook::new(&cfg.webhook));
-        notifies.lock().unwrap().push(o);
-    }
-    // init notifier end
-
-    // notify test
-    if args.notify_test {
-        for notifier in &*notifies.lock().unwrap() {
-            eprintln!("send test message to {}", notifier.kind());
-            notifier.notify_test().unwrap();
-        }
-        thread::sleep(Duration::from_millis(7000)); // TODO: wait
-        eprintln!("Please check for notifications");
-        process::exit(0);
-    }
 
     // init mgr
     let mut mgr = crate::stats::StatsMgr::new();
-    mgr.init(G_CONFIG.get().unwrap(), notifies)?;
+    mgr.init(G_CONFIG.get().unwrap())?;
     if G_STATS_MGR.set(mgr).is_err() {
         error!("can't set G_STATS_MGR");
         process::exit(1);
