@@ -101,9 +101,11 @@ pub fn tupd() -> (u32, u32, u32, u32) {
 
 static TRAFFIC_REGEX: &str =
     r#"([^\s]+):[\s]{0,}(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)"#;
+
 lazy_static! {
     static ref TRAFFIC_REGEX_RE: Regex = Regex::new(TRAFFIC_REGEX).unwrap();
 }
+
 pub fn get_sys_traffic(args: &Args) -> (u64, u64) {
     let (mut network_in, mut network_out) = (0, 0);
     let file = File::open("/proc/net/dev").unwrap();
@@ -133,6 +135,7 @@ pub fn get_sys_traffic(args: &Args) -> (u64, u64) {
 }
 
 static DF_CMD:&str = "df -Tlm --total -t ext4 -t ext3 -t ext2 -t reiserfs -t jfs -t ntfs -t fat32 -t btrfs -t fuseblk -t zfs -t simfs -t xfs";
+
 pub fn get_hdd(stat: &mut StatRequest) {
     let (mut hdd_total, mut hdd_used) = (0, 0);
     let a = &Command::new("/bin/sh")
@@ -229,6 +232,7 @@ pub fn start_net_speed_collect_t(args: &Args) {
 lazy_static! {
     pub static ref G_CPU_PERCENT: Arc<Mutex<f64>> = Arc::new(Default::default());
 }
+
 #[allow(unused)]
 pub fn start_cpu_percent_collect_t() {
     let mut pre_cpu: Vec<u64> = vec![0, 0, 0, 0];
@@ -271,6 +275,7 @@ pub fn start_cpu_percent_collect_t() {
 
 static ONLINE_IPV4: u8 = 1;
 static ONLINE_IPV6: u8 = 2;
+
 pub fn get_network(args: &Args) -> (bool, bool) {
     let mut network: [bool; 2] = [(args.online & ONLINE_IPV4) != 0, (args.online & ONLINE_IPV6) != 0];
     if network.iter().any(|&x| x) {
