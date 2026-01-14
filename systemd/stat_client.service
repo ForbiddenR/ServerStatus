@@ -3,17 +3,14 @@ Description=ServerStatus-Rust Client
 After=network.target
 
 [Service]
-User=root
-Group=root
+User=bypass
+Group=bypass
 Environment="RUST_BACKTRACE=1"
 WorkingDirectory=/opt/ServerStatus
-# EnvironmentFile=/opt/ServerStatus/.env
-ExecStart=/opt/ServerStatus/stat_client -a "http://127.0.0.1:8080/report" -u h1 -p p1
+EnvironmentFile=/opt/ServerStatus/.env
+ExecStart=/opt/ServerStatus/stat_client -n --disable-ping --version
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
-
-# /etc/systemd/system/stat_client.service
-# journalctl -u stat_client -f -n 100
