@@ -1,4 +1,3 @@
-// #![allow(unused)]
 use anyhow::Result;
 use std::str::FromStr;
 use tonic::{
@@ -15,7 +14,7 @@ use crate::G_CONFIG;
 use crate::G_STATS_MGR;
 
 #[derive(Default)]
-pub struct ServerStatusSrv {}
+pub struct ServerStatusSrv;
 
 #[tonic::async_trait]
 impl ServerStatus for ServerStatusSrv {

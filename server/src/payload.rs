@@ -106,6 +106,7 @@ pub struct StatsResp {
     pub updated: u64,
     pub servers: Vec<HostStat>,
 }
+
 impl StatsResp {
     pub fn new() -> Self {
         Self {

@@ -71,10 +71,7 @@ impl StatsMgr {
         }
     }
 
-    pub fn init(
-        &mut self,
-        cfg: &'static crate::config::Config,
-    ) -> Result<()> {
+    pub fn init(&mut self, cfg: &'static crate::config::Config) -> Result<()> {
         let hosts_map_base = Arc::new(Mutex::new(cfg.hosts_map.clone()));
 
         // load last_network_in/out
@@ -245,7 +242,8 @@ impl StatsMgr {
 
                         // labels
                         const OS_LIST: [&str; 10] = [
-                            "centos", "debian", "ubuntu", "arch", "windows", "macos", "pi", "android", "linux", "freebsd"
+                            "centos", "debian", "ubuntu", "arch", "windows", "macos", "pi", "android", "linux",
+                            "freebsd",
                         ];
                         if !o.labels.contains("os=") {
                             if let Some(sys_info) = &o.sys_info {
