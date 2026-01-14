@@ -45,13 +45,13 @@ lazy_static! {
     pub static ref G_CPU_PERCENT: Arc<Mutex<f64>> = Arc::new(Default::default());
 }
 pub fn start_cpu_percent_collect_t() {
-    let mut sys = System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::new().with_cpu_usage()));
+    let mut sys =
+        System::new_with_specifics(RefreshKind::nothing().with_cpu(CpuRefreshKind::nothing().with_cpu_usage()));
     thread::spawn(move || loop {
-        sys.refresh_cpu();
+        sys.refresh_cpu_all();
 
-        let global_cpu = sys.global_cpu_info();
         if let Ok(mut cpu_percent) = G_CPU_PERCENT.lock() {
-            *cpu_percent = global_cpu.cpu_usage().round() as f64;
+            *cpu_percent = sys.global_cpu_usage().round() as f64;
         }
 
         thread::sleep(Duration::from_millis(SAMPLE_PERIOD));
@@ -86,7 +86,7 @@ pub fn start_net_speed_collect_t(args: &Args) {
             t.net_tx = net_tx;
         }
 
-        networks.refresh_list();
+        networks.refresh(true);
         thread::sleep(Duration::from_millis(SAMPLE_PERIOD));
     });
 }
@@ -105,7 +105,8 @@ pub fn sample(args: &Args, stat: &mut StatRequest) {
         unit = 1000;
     }
 
-    let mut sys = System::new_with_specifics(RefreshKind::new().with_memory(MemoryRefreshKind::everything()));
+    // let mut sys = System::new_with_specifics(RefreshKind::new().with_memory(MemoryRefreshKind::everything()));
+    let mut sys = System::new_with_specifics(RefreshKind::nothing().with_memory(MemoryRefreshKind::everything()));
 
     // uptime
     stat.uptime = System::uptime();
@@ -233,7 +234,7 @@ pub fn collect_sys_info(args: &Args) -> SysInfo {
     let mut info_pb = SysInfo::default();
 
     let mut sys = System::new();
-    sys.refresh_cpu();
+    sys.refresh_cpu_all();
 
     info_pb.name = args.user.to_owned();
     info_pb.version = env!("CARGO_PKG_VERSION").to_string();
@@ -345,7 +346,7 @@ pub fn print_sysinfo() {
     system_t.add_row(row!["Long OS version", System::long_os_version().unwrap_or_default()]);
     system_t.add_row(row!["Distribution ID", System::distribution_id()]);
     system_t.add_row(row!["Host name", System::host_name().unwrap_or_default()]);
-    system_t.add_row(row!["CPU arch", System::cpu_arch().unwrap_or_default()]);
+    system_t.add_row(row!["CPU arch", System::cpu_arch()]);
 
     let mut cpu_t = Table::new();
     cpu_t.set_format(*prettytable::format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
